@@ -16,6 +16,7 @@ app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
 // ---------- MONGODB CONNECTION ----------
 mongoose .connect( "mongodb+srv://viratawargand95:RaisoniConnect@cluster0.e3o9mfy.mongodb.net/studentDB?retryWrites=true&w=majority&appName=Cluster0", { useNewUrlParser: true, useUnifiedTopology: true } ) .then(() => console.log("✅ MongoDB connected to Atlas")) .catch((err) => console.error("❌ MongoDB connection error:", err.message));
+
 // ---------- FILE STORAGE ----------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/"),
@@ -44,7 +45,6 @@ const DS2125 = mongoose.model("DSstudents21-25", studentSchema, "DSstudents21-25
 const DS2226 = mongoose.model("DSstudents22-26", studentSchema, "DSstudents22-26");
 const studentCollections = [CS2125, CS2226, DS2125, DS2226];
 
-
 // ---------- MESSAGE SCHEMA ----------
 const messageSchema = new mongoose.Schema(
   {
@@ -62,6 +62,39 @@ const messageSchema = new mongoose.Schema(
 );
 
 const Message = mongoose.model("Message", messageSchema);
+
+// ---------- POST SCHEMA ---------- (THIS WAS MISSING!)
+const postSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    content: { type: String, required: true },
+    fileUrl: { type: String },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    comments: [
+      {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+        text: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now }
+      }
+    ]
+  },
+  { timestamps: true }
+);
+
+const Post = mongoose.model("Post", postSchema);
+
+// Add this EVENT SCHEMA after the Post schema (around line 75)
+const eventSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    title: { type: String, required: true },
+    date: { type: Date, required: true },
+    description: { type: String, required: true }
+  },
+  { timestamps: true }
+);
+
+const Event = mongoose.model("Event", eventSchema);
 
 // ---------- MIDDLEWARE ----------
 const authMiddleware = (req, res, next) => {
@@ -161,12 +194,12 @@ app.get("/api/users", authMiddleware, async (req, res) => {
 // Connections (all users except me)
 app.get("/api/connections", authMiddleware, async (req, res) => {
   try {
-    console.log("👉 Authenticated user:", req.user); // 👈 add this
+    console.log("👉 Authenticated user:", req.user);
     const myId = req.user.id;
 
     const users = await User.find({ _id: { $ne: myId } }).select("_id name regNo email mobile");
 
-    console.log("👉 Users found:", users.length); // 👈 add this
+    console.log("👉 Users found:", users.length);
 
     res.json(users);
   } catch (err) {
@@ -174,7 +207,6 @@ app.get("/api/connections", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch connections" });
   }
 });
-
 
 // Get user by regNo
 app.get("/api/users/:regNo", authMiddleware, async (req, res) => {
@@ -283,6 +315,217 @@ app.post("/api/messages/:userId/:msgId/react", authMiddleware, async (req, res) 
   }
 });
 
+// ---------- POSTS ROUTES ----------
+
+// Create Post
+app.post("/api/posts", authMiddleware, upload.single("file"), async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content && !req.file) return res.status(400).json({ error: "Content or file required" });
+
+    const fileUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    
+    console.log("📁 File uploaded:", req.file ? req.file.filename : "No file");
+
+    const newPost = new Post({ userId: req.user.id, content: content || "", fileUrl });
+    await newPost.save();
+
+    // Populate the user info for response
+    await newPost.populate("userId", "name regNo email");
+
+    res.json({ 
+      message: "✅ Post created successfully", 
+      _id: newPost._id,
+      userId: newPost.userId,
+      content: newPost.content,
+      fileUrl: newPost.fileUrl,
+      likes: newPost.likes,
+      comments: newPost.comments,
+      createdAt: newPost.createdAt
+    });
+  } catch (error) {
+    console.error("❌ Error creating post:", error);
+    res.status(500).json({ error: "Failed to create post", details: error.message });
+  }
+});
+
+// Get Posts
+app.get("/api/posts", authMiddleware, async (req, res) => {
+  try {
+    const posts = await Post.find()
+      .populate("userId", "name regNo email")
+      .populate("comments.userId", "name regNo")
+      .sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (error) {
+    console.error("❌ Error fetching posts:", error);
+    res.status(500).json({ error: "Failed to fetch posts", details: error.message });
+  }
+});
+
+// Like Post
+app.post("/api/posts/:id/like", authMiddleware, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    const userId = req.user.id;
+    if (post.likes.includes(userId)) {
+      post.likes = post.likes.filter((id) => id.toString() !== userId);
+    } else {
+      post.likes.push(userId);
+    }
+
+    await post.save();
+    res.json({ message: "✅ Like updated", likes: post.likes.length });
+  } catch (error) {
+    console.error("❌ Error liking post:", error);
+    res.status(500).json({ error: "Failed to like post", details: error.message });
+  }
+});
+
+// Comment Post
+app.post("/api/posts/:id/comment", authMiddleware, async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ error: "Comment text required" });
+
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    post.comments.push({ userId: req.user.id, text });
+    await post.save();
+
+    // Populate the comment user info
+    await post.populate("comments.userId", "name regNo");
+
+    res.json({ message: "✅ Comment added", comments: post.comments });
+  } catch (error) {
+    console.error("❌ Error commenting on post:", error);
+    res.status(500).json({ error: "Failed to comment", details: error.message });
+  }
+});
+
+
+// Create Event
+app.post("/api/events", authMiddleware, async (req, res) => {
+  try {
+    const { title, date, description } = req.body;
+    
+    if (!title || !date || !description) {
+      return res.status(400).json({ error: "Title, date, and description are required" });
+    }
+
+    const newEvent = new Event({
+      userId: req.user.id,
+      title,
+      date: new Date(date),
+      description
+    });
+
+    await newEvent.save();
+
+    // Populate user info for response
+    await newEvent.populate("userId", "name regNo email");
+
+    res.json({
+      message: "✅ Event created successfully",
+      _id: newEvent._id,
+      userId: newEvent.userId,
+      title: newEvent.title,
+      date: newEvent.date,
+      description: newEvent.description,
+      createdAt: newEvent.createdAt
+    });
+  } catch (error) {
+    console.error("❌ Error creating event:", error);
+    res.status(500).json({ error: "Failed to create event", details: error.message });
+  }
+});
+
+// Get Events
+app.get("/api/events", authMiddleware, async (req, res) => {
+  try {
+    const events = await Event.find()
+      .populate("userId", "name regNo email")
+      .sort({ date: 1 }); // Sort by date (upcoming events first)
+    
+    res.json(events);
+  } catch (error) {
+    console.error("❌ Error fetching events:", error);
+    res.status(500).json({ error: "Failed to fetch events", details: error.message });
+  }
+});
+
+// Get Event by ID
+app.get("/api/events/:id", authMiddleware, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id).populate("userId", "name regNo email");
+    
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    res.json(event);
+  } catch (error) {
+    console.error("❌ Error fetching event:", error);
+    res.status(500).json({ error: "Failed to fetch event", details: error.message });
+  }
+});
+
+// Update Event (only by creator)
+app.put("/api/events/:id", authMiddleware, async (req, res) => {
+  try {
+    const { title, date, description } = req.body;
+    
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // Check if user is the creator
+    if (event.userId.toString() !== req.user.id) {
+      return res.status(403).json({ error: "Not authorized to update this event" });
+    }
+
+    // Update fields
+    if (title) event.title = title;
+    if (date) event.date = new Date(date);
+    if (description) event.description = description;
+
+    await event.save();
+    await event.populate("userId", "name regNo email");
+
+    res.json({
+      message: "✅ Event updated successfully",
+      event
+    });
+  } catch (error) {
+    console.error("❌ Error updating event:", error);
+    res.status(500).json({ error: "Failed to update event", details: error.message });
+  }
+});
+
+// Delete Event (only by creator)
+app.delete("/api/events/:id", authMiddleware, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // Check if user is the creator
+    if (event.userId.toString() !== req.user.id) {
+      return res.status(403).json({ error: "Not authorized to delete this event" });
+    }
+
+    await event.deleteOne();
+    res.json({ message: "✅ Event deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting event:", error);
+    res.status(500).json({ error: "Failed to delete event", details: error.message });
+  }
+});
 
 // ---------- START SERVER ----------
 app.listen(5000, () => console.log("🚀 Server running on http://localhost:5000"));

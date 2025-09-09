@@ -30,21 +30,22 @@ export default function AuthPage() {
       } else {
         // ✅ Store token, regNo, and full user
         localStorage.setItem("token", data.token);
-
-        // Store regNo separately (this is what ProfilePage needs!)
+      
+        // Store regNo separately
         if (data.user?.regNo) {
           localStorage.setItem("regNo", data.user.regNo);
         }
-
-        // Keep full user object in case you need it later
+      
+        // Store full user object
         localStorage.setItem("user", JSON.stringify(data.user));
-
+      
         console.log("✅ Login successful - Token & regNo stored");
         alert(data.message);
-
-        // Redirect to profile page instead of home
+      
+        // Redirect to home
         navigate("/home");
       }
+      
     } catch (err) {
       console.error("Login error:", err);
       setError("Server error. Please try again later.");
