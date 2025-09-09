@@ -6,12 +6,18 @@ import FeedPage from "./pages/FeedPage";
 import EventsPage from "./pages/EventsPage";
 import AchievementsPage from "./pages/AchievementsPage";
 import ProfilePage from "./pages/ProfilePage";
+import NetworkPage from "./pages/NetworkPage";
+import CampusesPage from "./pages/CampusesPage";
+
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<AuthPage />} />
+        <Route path="/network" element={<NetworkPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/campuses" element={<CampusesPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/feed" element={<FeedPage />} />

@@ -5,6 +5,7 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ regNo: "", password: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -13,6 +14,8 @@ export default function AuthPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
       const response = await fetch("http://localhost:5000/api/login", {
         method: "POST",
@@ -21,14 +24,32 @@ export default function AuthPage() {
       });
 
       const data = await response.json();
+
       if (!response.ok) {
-        setError(data.message);
+        setError(data.error || data.message || "Login failed");
       } else {
+        // ✅ Store token, regNo, and full user
+        localStorage.setItem("token", data.token);
+
+        // Store regNo separately (this is what ProfilePage needs!)
+        if (data.user?.regNo) {
+          localStorage.setItem("regNo", data.user.regNo);
+        }
+
+        // Keep full user object in case you need it later
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        console.log("✅ Login successful - Token & regNo stored");
         alert(data.message);
-        navigate("/home");   // ✅ redirect to HomePage after login
+
+        // Redirect to profile page instead of home
+        navigate("/home");
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError("Server error. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,7 +68,9 @@ export default function AuthPage() {
           />
         </div>
 
-        <h2 className="text-2xl font-bold text-center text-blue-600">Raisoni Connect Login</h2>
+        <h2 className="text-2xl font-bold text-center text-blue-600">
+          Raisoni Connect Login
+        </h2>
 
         {error && <p className="text-red-500 text-center">{error}</p>}
 
@@ -57,7 +80,9 @@ export default function AuthPage() {
           placeholder="Registration No"
           required
           onChange={handleChange}
-          className="w-full border px-3 py-2 rounded"
+          value={form.regNo}
+          className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={loading}
         />
         <input
           type="password"
@@ -65,19 +90,25 @@ export default function AuthPage() {
           placeholder="Password"
           required
           onChange={handleChange}
-          className="w-full border px-3 py-2 rounded"
+          value={form.password}
+          className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={loading}
         />
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
 
         <p className="text-center text-sm">
-          Don’t have an account?{" "}
-          <a href="/register" className="text-blue-600 font-medium">
+          Don't have an account?{" "}
+          <a
+            href="/register"
+            className="text-blue-600 font-medium hover:underline"
+          >
             Register
           </a>
         </p>
@@ -85,4 +116,3 @@ export default function AuthPage() {
     </div>
   );
 }
-

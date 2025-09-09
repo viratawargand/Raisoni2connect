@@ -12,29 +12,16 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
 // ---------- MONGODB CONNECTION ----------
-mongoose
-  .connect(
-    "mongodb+srv://viratawargand95:RaisoniConnect@cluster0.e3o9mfy.mongodb.net/studentDB?retryWrites=true&w=majority&appName=Cluster0",
-    { useNewUrlParser: true, useUnifiedTopology: true }
-  )
-  .then(() => console.log("✅ MongoDB connected to Atlas"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err.message));
-
+mongoose .connect( "mongodb+srv://viratawargand95:RaisoniConnect@cluster0.e3o9mfy.mongodb.net/studentDB?retryWrites=true&w=majority&appName=Cluster0", { useNewUrlParser: true, useUnifiedTopology: true } ) .then(() => console.log("✅ MongoDB connected to Atlas")) .catch((err) => console.error("❌ MongoDB connection error:", err.message));
 // ---------- FILE STORAGE ----------
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // save to /uploads
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
-
-// Serve uploaded files
 app.use("/uploads", express.static("uploads"));
 
 // ---------- SCHEMAS ----------
@@ -57,23 +44,24 @@ const DS2125 = mongoose.model("DSstudents21-25", studentSchema, "DSstudents21-25
 const DS2226 = mongoose.model("DSstudents22-26", studentSchema, "DSstudents22-26");
 const studentCollections = [CS2125, CS2226, DS2125, DS2226];
 
-const postSchema = new mongoose.Schema(
+
+// ---------- MESSAGE SCHEMA ----------
+const messageSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    content: { type: String, required: true },
-    fileUrl: { type: String, default: null }, // store file path if uploaded
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    comments: [
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    receiver: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    text: { type: String, required: true },
+    reactions: [
       {
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        text: String,
-        createdAt: { type: Date, default: Date.now },
+        emoji: String,
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       },
     ],
   },
   { timestamps: true }
 );
-const Post = mongoose.model("Post", postSchema);
+
+const Message = mongoose.model("Message", messageSchema);
 
 // ---------- MIDDLEWARE ----------
 const authMiddleware = (req, res, next) => {
@@ -82,7 +70,7 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret123");
-    req.user = decoded;
+    req.user = decoded; // { id, regNo }
     next();
   } catch (err) {
     return res.status(401).json({ error: "Invalid token" });
@@ -90,19 +78,15 @@ const authMiddleware = (req, res, next) => {
 };
 
 // ---------- AUTH ROUTES ----------
-
 // Register
 app.post("/api/register", async (req, res) => {
   try {
     const { firstName, lastName, regNo, email, password, confirmPassword, mobile } = req.body;
-    if (!firstName || !lastName || !regNo || !email || !password || !confirmPassword) {
+    if (!firstName || !lastName || !regNo || !email || !password || !confirmPassword)
       return res.status(400).json({ error: "All fields are required" });
-    }
-    if (password !== confirmPassword) {
-      return res.status(400).json({ error: "Passwords do not match" });
-    }
+    if (password !== confirmPassword) return res.status(400).json({ error: "Passwords do not match" });
 
-    const name = `${firstName} ${lastName}1`;
+    const name = `${firstName} ${lastName}`;
 
     // whitelist check
     let isWhitelisted = null;
@@ -138,11 +122,9 @@ app.post("/api/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ error: "Invalid Registration Number or Password" });
 
-    const token = jwt.sign(
-      { id: user._id, regNo: user.regNo },
-      process.env.JWT_SECRET || "secret123",
-      { expiresIn: "7d" }
-    );
+    const token = jwt.sign({ id: user._id, regNo: user.regNo }, process.env.JWT_SECRET || "secret123", {
+      expiresIn: "7d",
+    });
 
     res.json({
       message: "✅ Login successful",
@@ -154,75 +136,153 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ---------- FEED / POSTS ----------
-
-// Create Post with optional file upload
-app.post("/api/posts", authMiddleware, upload.single("file"), async (req, res) => {
+// ---------- USERS ----------
+// Search users
+app.get("/api/users", authMiddleware, async (req, res) => {
   try {
-    const { content } = req.body;
-    if (!content && !req.file) return res.status(400).json({ error: "Content or file required" });
+    const me = await User.findById(req.user.id);
+    const q = req.query.q?.trim();
+    const filter = q
+      ? {
+          $and: [
+            { _id: { $ne: me._id } },
+            { $or: [{ name: new RegExp(q, "i") }, { email: new RegExp(q, "i") }, { regNo: new RegExp(q, "i") }] },
+          ],
+        }
+      : { _id: { $ne: me._id } };
 
-    const fileUrl = req.file ? `/uploads/${req.file.filename}` : null;
-
-    const newPost = new Post({ userId: req.user.id, content, fileUrl });
-    await newPost.save();
-
-    res.json({ message: "✅ Post created successfully", post: newPost });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to create post", details: error.message });
+    const users = await User.find(filter).select("name email regNo mobile");
+    res.json(users);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch users" });
   }
 });
 
-// Get Posts
-app.get("/api/posts", authMiddleware, async (req, res) => {
+// Connections (all users except me)
+app.get("/api/connections", authMiddleware, async (req, res) => {
   try {
-    const posts = await Post.find()
-      .populate("userId", "name regNo email")
-      .populate("comments.userId", "name regNo")
-      .sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch posts", details: error.message });
+    console.log("👉 Authenticated user:", req.user); // 👈 add this
+    const myId = req.user.id;
+
+    const users = await User.find({ _id: { $ne: myId } }).select("_id name regNo email mobile");
+
+    console.log("👉 Users found:", users.length); // 👈 add this
+
+    res.json(users);
+  } catch (err) {
+    console.error("❌ Error fetching connections:", err);
+    res.status(500).json({ error: "Failed to fetch connections" });
   }
 });
 
-// Like Post
-app.post("/api/posts/:id/like", authMiddleware, async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-    if (!post) return res.status(404).json({ error: "Post not found" });
 
-    const userId = req.user.id;
-    if (post.likes.includes(userId)) {
-      post.likes = post.likes.filter((id) => id.toString() !== userId);
-    } else {
-      post.likes.push(userId);
+// Get user by regNo
+app.get("/api/users/:regNo", authMiddleware, async (req, res) => {
+  try {
+    const { regNo } = req.params;
+    const user = await User.findOne({ regNo });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.json(user);
+  } catch (error) {
+    console.error("❌ Error fetching user:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ---------- MESSAGES ----------
+
+// Get messages between logged-in user and another user
+app.get("/api/messages/:userId", authMiddleware, async (req, res) => {
+  try {
+    const myId = req.user.id;
+    const otherId = req.params.userId;
+
+    const messages = await Message.find({
+      $or: [
+        { sender: myId, receiver: otherId },
+        { sender: otherId, receiver: myId },
+      ],
+    }).sort({ createdAt: 1 });
+
+    // mark which ones are mine
+    const formatted = messages.map((m) => ({
+      ...m._doc,
+      isMine: m.sender.toString() === myId,
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error("❌ Error fetching messages:", err);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
+// Send a message
+app.post("/api/messages/:userId", authMiddleware, async (req, res) => {
+  try {
+    const myId = req.user.id;
+    const otherId = req.params.userId;
+    const { text } = req.body;
+
+    if (!text) return res.status(400).json({ error: "Message text is required" });
+
+    const newMsg = new Message({
+      sender: myId,
+      receiver: otherId,
+      text,
+    });
+
+    await newMsg.save();
+
+    res.json({ ...newMsg._doc, isMine: true });
+  } catch (err) {
+    console.error("❌ Error sending message:", err);
+    res.status(500).json({ error: "Failed to send message" });
+  }
+});
+
+// Delete a message (only if I'm the sender)
+app.delete("/api/messages/:userId/:msgId", authMiddleware, async (req, res) => {
+  try {
+    const myId = req.user.id;
+    const { msgId } = req.params;
+
+    const msg = await Message.findById(msgId);
+    if (!msg) return res.status(404).json({ error: "Message not found" });
+
+    if (msg.sender.toString() !== myId) {
+      return res.status(403).json({ error: "Not authorized to delete this message" });
     }
 
-    await post.save();
-    res.json({ message: "✅ Like updated", likes: post.likes.length });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to like post", details: error.message });
+    await msg.deleteOne();
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error deleting message:", err);
+    res.status(500).json({ error: "Failed to delete message" });
   }
 });
 
-// Comment Post
-app.post("/api/posts/:id/comment", authMiddleware, async (req, res) => {
+// React to a message
+app.post("/api/messages/:userId/:msgId/react", authMiddleware, async (req, res) => {
   try {
-    const { text } = req.body;
-    if (!text) return res.status(400).json({ error: "Comment text required" });
+    const { msgId } = req.params;
+    const { emoji } = req.body;
 
-    const post = await Post.findById(req.params.id);
-    if (!post) return res.status(404).json({ error: "Post not found" });
+    const msg = await Message.findById(msgId);
+    if (!msg) return res.status(404).json({ error: "Message not found" });
 
-    post.comments.push({ userId: req.user.id, text });
-    await post.save();
+    msg.reactions = msg.reactions || [];
+    msg.reactions.push({ emoji, user: req.user.id });
 
-    res.json({ message: "✅ Comment added", comments: post.comments });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to comment", details: error.message });
+    await msg.save();
+    res.json(msg);
+  } catch (err) {
+    console.error("❌ Error reacting to message:", err);
+    res.status(500).json({ error: "Failed to react to message" });
   }
 });
+
 
 // ---------- START SERVER ----------
 app.listen(5000, () => console.log("🚀 Server running on http://localhost:5000"));

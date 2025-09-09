@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaHome,
@@ -10,11 +10,17 @@ import {
   FaEnvelope,
   FaUser,
 } from "react-icons/fa";
+import MessagesDrawer from "../components/MessagesDrawer";
+import NotificationsDrawer from "../components/NotificationsDrawer";
 
 export default function HomePage() {
+  const [drawer, setDrawer] = useState({ open: false, type: "" });
+
+  const openDrawer = (type) => setDrawer({ open: true, type });
+  const closeDrawer = () => setDrawer({ open: false, type: "" });
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
       <nav className="flex items-center justify-between px-6 py-3 bg-white shadow">
         <div className="flex items-center space-x-3">
           <img
@@ -23,14 +29,8 @@ export default function HomePage() {
             className="h-10"
           />
           <span className="text-xl font-bold text-blue-800">RaisoniConnect</span>
-          <input
-            type="text"
-            placeholder="Search Raisoni students, alumni..."
-            className="ml-4 px-3 py-1 border rounded-md focus:outline-none focus:ring"
-          />
         </div>
 
-        {/* Links */}
         <div className="flex space-x-6 items-center text-gray-600">
           <Link to="/Feed" className="flex items-center space-x-1 text-blue-600 font-semibold">
             <FaHome /> <span>Feed</span>
@@ -52,18 +52,24 @@ export default function HomePage() {
             <FaUniversity /> <span>Campuses</span>
           </Link>
 
+          {/* Messages */}
           <div className="relative">
-            <FaEnvelope className="text-xl" />
-            <span className="absolute -top-2 -right-2 text-xs bg-red-500 text-white rounded-full px-1">
-              3
-            </span>
+            <button
+              onClick={() => openDrawer("messages")}
+              className="p-2 rounded-full hover:bg-gray-100"
+            >
+              <FaEnvelope className="text-xl" />
+            </button>
           </div>
 
+          {/* Notifications */}
           <div className="relative">
-            <FaBell className="text-xl" />
-            <span className="absolute -top-2 -right-2 text-xs bg-red-500 text-white rounded-full px-1">
-              5
-            </span>
+            <button
+              onClick={() => openDrawer("notifications")}
+              className="p-2 rounded-full hover:bg-gray-100"
+            >
+              <FaBell className="text-xl" />
+            </button>
           </div>
 
           <Link to="/profile">
@@ -86,17 +92,23 @@ export default function HomePage() {
             className="w-full border rounded-md p-2 focus:outline-none"
           />
         </div>
-        <div className="flex justify-between items-center mt-3">
-          <div className="flex space-x-4 text-gray-500">
-            <span>📷 Photo</span>
-            <span>🎥 Video</span>
-            <span>📄 Document</span>
-          </div>
+        <div className="flex justify-between items-center mt-3 text-gray-500">
+          <span>📷 Photo</span>
+          <span>🎥 Video</span>
+          <span>📄 Document</span>
           <button className="bg-blue-500 text-white px-4 py-1 rounded-md">
             Post
           </button>
         </div>
       </div>
+
+      {drawer.type === "messages" && (
+        <MessagesDrawer open={drawer.open} onClose={closeDrawer} />
+      )}
+
+      {drawer.type === "notifications" && (
+        <NotificationsDrawer open={drawer.open} onClose={closeDrawer} />
+      )}
     </div>
   );
 }

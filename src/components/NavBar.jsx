@@ -1,84 +1,59 @@
 // src/components/NavBar.jsx
-import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Bell, MessageCircle } from "lucide-react";
+import MessagesDrawer from "./MessagesDrawer";
 
 export default function NavBar({ user, onLogout }) {
-  const navigate = useNavigate();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerType, setDrawerType] = useState(null);
 
-  const link =
-    "px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100";
-  const active =
-    "px-3 py-2 rounded-md text-sm font-semibold text-blue-600 bg-blue-50";
+  const toggleDrawer = (type) => {
+    console.log("Icon clicked:", type); // ✅ Debug log
+    setDrawerType(type);
+    setDrawerOpen(true);
+  };
 
   return (
-    <div className="bg-white border-b">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <img
-            src="https://rgicdn.s3.ap-south-1.amazonaws.com/ghrcempune/images/new-theme/logo.png"
-            alt="Raisoni"
-            className="h-8"
-          />
-          <div className="text-xl font-bold text-blue-700">RaisoniConnect</div>
-          <input
-            className="ml-6 hidden md:block border rounded-lg px-3 py-1.5 w-80"
-            placeholder="Search Raisoni students, alumni, clubs..."
-          />
-        </div>
+    <nav className="w-full bg-white shadow-md p-4 flex justify-between items-center relative z-50">
+      {/* Left side - logo or title */}
+      <h1 className="text-xl font-bold text-blue-600">MyApp</h1>
 
-        <div className="flex items-center gap-2">
-          <NavLink
-            to="/feed"
-            className={({ isActive }) => (isActive ? active : link)}
-          >
-            Feed
-          </NavLink>
-          <NavLink
-            to="/network"
-            className={({ isActive }) => (isActive ? active : link)}
-          >
-            Network
-          </NavLink>
-          <NavLink
-            to="/events"
-            className={({ isActive }) => (isActive ? active : link)}
-          >
-            Events
-          </NavLink>
-          <NavLink
-            to="/achievements"
-            className={({ isActive }) => (isActive ? active : link)}
-          >
-            Achievements
-          </NavLink>
-          <NavLink
-            to="/campuses"
-            className={({ isActive }) => (isActive ? active : link)}
-          >
-            Campuses
-          </NavLink>
+      {/* Right side - icons + user */}
+      <div className="flex items-center space-x-4">
+        {/* Notifications Icon */}
+        <button
+          onClick={() => toggleDrawer("notifications")}
+          className="relative p-2 hover:bg-gray-100 rounded-full z-50"
+        >
+          <Bell className="w-6 h-6 text-gray-700" />
+        </button>
 
-          <div className="h-6 w-px bg-gray-200 mx-2" />
+        {/* Messages Icon */}
+        <button
+          onClick={() => toggleDrawer("messages")}
+          className="relative p-2 hover:bg-gray-100 rounded-full z-50"
+        >
+          <MessageCircle className="w-6 h-6 text-gray-700" />
+        </button>
 
+        {/* User Info */}
+        <div className="flex items-center space-x-2">
+          <span className="font-medium">{user?.name}</span>
           <button
-            className="text-sm text-gray-700 hover:underline"
-            onClick={() => navigate("/profile")}
-            title="Profile"
-          >
-            {user?.firstName ? user.firstName : "Profile"}
-          </button>
-
-          <button
-            onClick={() => {
-              onLogout?.();
-              navigate("/login", { replace: true });
-            }}
-            className="ml-2 text-sm text-red-600 hover:underline"
+            onClick={onLogout}
+            className="px-3 py-1 bg-red-500 text-white rounded-md"
           >
             Logout
           </button>
         </div>
       </div>
-    </div>
+
+      {/* Drawer */}
+      <MessagesDrawer
+        open={drawerOpen}
+        type={drawerType}
+        onClose={() => setDrawerOpen(false)}
+      />
+    </nav>
   );
 }
