@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "accepts",
   "description": "Higher-level content negotiation",
   "version": "2.0.0",
@@ -22,6 +23,7 @@
     "multer": "^1.4.4-lts.1",
     "multer-gridfs-storage": "^5.0.2",
     "negotiator": "^1.0.0",
+    "nodemon": "^3.1.10",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
