@@ -13,16 +13,16 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// ✅ CORS: Allow frontend on Vercel + localhost (for testing)
 app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://raisoni2connect-5erqffc1r-virat-awargands-projects.vercel.app" // <-- Vercel frontend URL
+      /\.vercel\.app$/   // ✅ allows all Vercel deploys
     ],
     credentials: true,
   })
 );
+
 
 
 
