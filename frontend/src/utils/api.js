@@ -1,15 +1,13 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL, // <--  .env variable
+  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000", // fallback for local dev
 });
 
-// Include token automatically
+// Add token automatically
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 

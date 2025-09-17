@@ -1,7 +1,7 @@
 // src/components/MessagesDrawer.jsx
 import React, { useState, useEffect } from "react";
 import { X, Trash2, Smile } from "lucide-react";
-import api from "../api";
+import api from "../utils/api";
 import Picker from "emoji-picker-react";
 
 export default function MessagesDrawer({ open, onClose }) {

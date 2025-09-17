@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../api";
+import api from "../utils/api";
 import { FaEdit, FaSave, FaTimes, FaLock, FaCamera, FaHeart, FaComment, FaCalendarAlt, FaUserFriends } from "react-icons/fa";
 
 export default function ProfilePage() {

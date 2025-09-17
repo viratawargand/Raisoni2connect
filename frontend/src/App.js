@@ -9,23 +9,23 @@ import ProfilePage from "./pages/ProfilePage";
 import NetworkPage from "./pages/NetworkPage";
 import CampusesPage from "./pages/CampusesPage";
 
-
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<AuthPage />} />
-        <Route path="/network" element={<NetworkPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/campuses" element={<CampusesPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/feed" element={<FeedPage />} />
-        <Route path="/events" element={<EventsPage />} />
-        <Route path="/achievements" element={<AchievementsPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-      </Routes>
-    </Router>
+    <div className="min-h-screen bg-gray-50 text-gray-800">
+      <Router>
+        <Routes>
+          <Route path="/" element={<AuthPage />} />
+          <Route path="/network" element={<NetworkPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/campuses" element={<CampusesPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/feed" element={<FeedPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/achievements" element={<AchievementsPage />} />
+        </Routes>
+      </Router>
+    </div>
   );
 }
 

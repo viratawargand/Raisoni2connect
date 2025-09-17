@@ -1,6 +1,6 @@
 // src/pages/EventsPage.jsx
 import React, { useEffect, useState } from "react";
-import api from "../api";
+import api from "../utils/api";
 
 export default function EventsPage() {
   const [events, setEvents] = useState([]);

@@ -1,7 +1,7 @@
 // src/components/NotificationsDrawer.jsx
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import api from "../api";
+import api from "../utils/api";
 
 export default function NotificationsDrawer({ open, onClose }) {
   const [notifications, setNotifications] = useState([]);

@@ -1,1 +1,0 @@
-{"version":3,"file":"static/css/main.9cfbc35a.css","mappings":"AAAA,cAAc,CACd,oBAAoB,CACpB,mBAAmB,CAEnB,KACE,+BACF","sources":["index.css"],"sourcesContent":["@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\nbody {\n  @apply bg-gray-50 text-gray-800;\n}\n"],"names":[],"sourceRoot":""}

@@ -14,7 +14,6 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: "https://raisoni2connect.onrender.com", credentials: true }));
 
-import cors from "cors";
 
 app.use(cors({
   origin: "raisoni2connect-gd9ozcdxe-virat-awargands-projects.vercel.app", // <--  Vercel frontend URL
