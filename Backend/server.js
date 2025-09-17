@@ -32,6 +32,8 @@ const userSchema = new mongoose.Schema({
   email: String,
   mobile: String,
   password: String,
+  connections: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // accepted connections
+  requests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],   // incoming requests
 });
 const User = mongoose.model("User", userSchema);
 
@@ -45,6 +47,8 @@ const DS2125 = mongoose.model("DSstudents21-25", studentSchema, "DSstudents21-25
 const DS2226 = mongoose.model("DSstudents22-26", studentSchema, "DSstudents22-26");
 const studentCollections = [CS2125, CS2226, DS2125, DS2226];
 
+
+ 
 // ---------- MESSAGE SCHEMA ----------
 const messageSchema = new mongoose.Schema(
   {
@@ -63,11 +67,11 @@ const messageSchema = new mongoose.Schema(
 
 const Message = mongoose.model("Message", messageSchema);
 
-// ---------- POST SCHEMA ---------- (THIS WAS MISSING!)
+// ---------- POST SCHEMA ----------
 const postSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    content: { type: String, required: true },
+    content: { type: String },
     fileUrl: { type: String },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     comments: [
@@ -81,9 +85,19 @@ const postSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Custom validation to ensure at least one of content or fileUrl is present
+postSchema.pre('validate', function(next) {
+  if (!this.content && !this.fileUrl) {
+    next(new Error("Either content or file is required"));
+  } else {
+    next();
+  }
+});
+
 const Post = mongoose.model("Post", postSchema);
 
-// Add this EVENT SCHEMA after the Post schema (around line 75)
+
+//  EVENT SCHEMA 
 const eventSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -443,6 +457,25 @@ app.post("/api/events", authMiddleware, async (req, res) => {
   }
 });
 
+// Delete Post (only by creator)
+app.delete("/api/posts/:id", authMiddleware, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    if (post.userId.toString() !== req.user.id) {
+      return res.status(403).json({ error: "Not authorized to delete this post" });
+    }
+
+    await post.deleteOne();
+    res.json({ message: "✅ Post deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting post:", error);
+    res.status(500).json({ error: "Failed to delete post", details: error.message });
+  }
+});
+
+
 // Get Events
 app.get("/api/events", authMiddleware, async (req, res) => {
   try {
@@ -526,6 +559,129 @@ app.delete("/api/events/:id", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "Failed to delete event", details: error.message });
   }
 });
+
+// ---------- CONNECTION REQUESTS ----------
+app.post("/api/connections/request/:userId", authMiddleware, async (req, res) => {
+  try {
+    const fromUserId = req.user.id;
+    const toUserId = req.params.userId;
+
+    if (fromUserId === toUserId) {
+      return res.status(400).json({ error: "Cannot send request to yourself" });
+    }
+
+    const fromUser = await User.findById(fromUserId);
+    const toUser = await User.findById(toUserId);
+
+    if (!fromUser || !toUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if already connected or request sent
+    if (fromUser.connections.includes(toUserId)) {
+      return res.status(400).json({ error: "Already connected" });
+    }
+
+    if (toUser.requests.includes(fromUserId)) {
+      return res.status(400).json({ error: "Request already sent" });
+    }
+
+    // Add request
+    toUser.requests.push(fromUserId);
+    await toUser.save();
+
+    res.json({ message: "✅ Connection request sent" });
+  } catch (err) {
+    console.error("❌ Error sending connection request:", err);
+    res.status(500).json({ error: "Failed to send request" });
+  }
+});
+
+// Accept connection request
+app.post("/api/connections/accept/:userId", authMiddleware, async (req, res) => {
+  try {
+    const myId = req.user.id;
+    const requesterId = req.params.userId;
+
+    const me = await User.findById(myId);
+    const requester = await User.findById(requesterId);
+
+    if (!me || !requester) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (!me.requests.includes(requesterId)) {
+      return res.status(400).json({ error: "No request from this user" });
+    }
+
+    // Add each other as connections
+    me.connections.push(requesterId);
+    requester.connections.push(myId);
+
+    // Remove request
+    me.requests = me.requests.filter(id => id.toString() !== requesterId);
+
+    await me.save();
+    await requester.save();
+
+    res.json({ message: "✅ Connection accepted" });
+  } catch (err) {
+    console.error("❌ Error accepting connection:", err);
+    res.status(500).json({ error: "Failed to accept connection" });
+  }
+});
+
+// Reject connection request
+app.post("/api/connections/reject/:userId", authMiddleware, async (req, res) => {
+  try {
+    const myId = req.user.id;
+    const requesterId = req.params.userId;
+
+    const me = await User.findById(myId);
+
+    if (!me) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (!me.requests.includes(requesterId)) {
+      return res.status(400).json({ error: "No request from this user" });
+    }
+
+    // Remove request
+    me.requests = me.requests.filter(id => id.toString() !== requesterId);
+    await me.save();
+
+    res.json({ message: "✅ Connection request rejected" });
+  } catch (err) {
+    console.error("❌ Error rejecting connection:", err);
+    res.status(500).json({ error: "Failed to reject request" });
+  }
+});
+
+// Get incoming connection requests
+app.get("/api/connections/requests", authMiddleware, async (req, res) => {
+  try {
+    const me = await User.findById(req.user.id).populate("requests", "name regNo email");
+
+    res.json(me.requests);
+  } catch (err) {
+    console.error("❌ Error fetching requests:", err);
+    res.status(500).json({ error: "Failed to fetch requests" });
+  }
+});
+
+// Get all connections
+app.get("/api/connections/all", authMiddleware, async (req, res) => {
+  try {
+    const me = await User.findById(req.user.id).populate("connections", "name regNo email");
+
+    res.json(me.connections);
+  } catch (err) {
+    console.error("❌ Error fetching connections:", err);
+    res.status(500).json({ error: "Failed to fetch connections" });
+  }
+});
+
 
 // ---------- START SERVER ----------
 app.listen(5000, () => console.log("🚀 Server running on http://localhost:5000"));
