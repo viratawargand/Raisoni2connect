@@ -16,7 +16,7 @@ import {
 import MessagesDrawer from "../components/MessagesDrawer";
 import NotificationsDrawer from "../components/NotificationsDrawer";
 
-const API_URL = "http://localhost:5000/api"; // Your backend API
+const API_URL = "https://raisoni2connect.onrender.com"; // Your backend API
 const token = localStorage.getItem("token"); // Store token after login
 
 export default function HomePage() {
@@ -226,11 +226,11 @@ export default function HomePage() {
             {post.fileUrl && (
               <div className="mt-2">
                 {post.fileUrl.endsWith(".mp4") || post.fileUrl.endsWith(".webm") ? (
-                  <video src={`http://localhost:5000${post.fileUrl}`} controls className="w-full rounded" />
+                  <video src={`https://raisoni2connect.onrender.com${post.fileUrl}`} controls className="w-full rounded" />
                 ) : post.fileUrl.match(/\.(jpeg|jpg|gif|png)$/) ? (
-                  <img src={`http://localhost:5000${post.fileUrl}`} alt="Attachment" className="w-full rounded" />
+                  <img src={`https://raisoni2connect.onrender.com${post.fileUrl}`} alt="Attachment" className="w-full rounded" />
                 ) : (
-                  <a href={`http://localhost:5000${post.fileUrl}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                  <a href={`https://raisoni2connect.onrender.com${post.fileUrl}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
                     📄 {post.fileUrl.split("/").pop()}
                   </a>
                 )}

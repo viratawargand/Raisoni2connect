@@ -12,7 +12,7 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(cors({ origin: "https://raisoni2connect.onrender.com", credentials: true }));
 
 // ---------- MONGODB CONNECTION ----------
 mongoose .connect( "mongodb+srv://viratawargand95:RaisoniConnect@cluster0.e3o9mfy.mongodb.net/studentDB?retryWrites=true&w=majority&appName=Cluster0", { useNewUrlParser: true, useUnifiedTopology: true } ) .then(() => console.log("✅ MongoDB connected to Atlas")) .catch((err) => console.error("❌ MongoDB connection error:", err.message));
@@ -684,4 +684,4 @@ app.get("/api/connections/all", authMiddleware, async (req, res) => {
 
 
 // ---------- START SERVER ----------
-app.listen(5000, () => console.log("🚀 Server running on http://localhost:5000"));
+app.listen(5000, () => console.log("🚀 Server running on https://raisoni2connect.onrender.com"));

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api", // backend server
+  baseURL: "https://raisoni2connect.onrender.com", // backend server
 });
 
 // Add a request interceptor to include token automatically

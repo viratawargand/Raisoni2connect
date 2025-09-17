@@ -12,7 +12,7 @@ export default function NetworkPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/connections", {
+      const res = await axios.get("https://raisoni2connect.onrender.com/api/connections", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
@@ -23,7 +23,7 @@ export default function NetworkPage() {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/connections/requests", {
+      const res = await axios.get("https://raisoni2connect.onrender.com/api/connections/requests", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRequests(res.data);
@@ -34,7 +34,7 @@ export default function NetworkPage() {
 
   const fetchConnections = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/connections/all", {
+      const res = await axios.get("https://raisoni2connect.onrender.com/api/connections/all", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setConnections(res.data);
@@ -54,7 +54,7 @@ export default function NetworkPage() {
 
   const sendRequest = async (userId) => {
     try {
-      await axios.post(`http://localhost:5000/api/connections/request/${userId}`, {}, {
+      await axios.post(`https://raisoni2connect.onrender.com/api/connections/request/${userId}`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("✅ Request sent!");
@@ -66,7 +66,7 @@ export default function NetworkPage() {
 
   const acceptRequest = async (userId) => {
     try {
-      await axios.post(`http://localhost:5000/api/connections/accept/${userId}`, {}, {
+      await axios.post(`https://raisoni2connect.onrender.com/api/connections/accept/${userId}`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("✅ Request accepted!");
@@ -79,7 +79,7 @@ export default function NetworkPage() {
 
   const rejectRequest = async (userId) => {
     try {
-      await axios.post(`http://localhost:5000/api/connections/reject/${userId}`, {}, {
+      await axios.post(`https://raisoni2connect.onrender.com/api/connections/reject/${userId}`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("❌ Request rejected!");
