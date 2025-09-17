@@ -17,7 +17,7 @@ app.use(cors({ origin: "https://raisoni2connect.onrender.com", credentials: true
 import cors from "cors";
 
 app.use(cors({
-  origin: "raisoni2connect-85mbm9b2y-virat-awargands-projects.vercel.app", // <--  Vercel frontend URL
+  origin: "raisoni2connect-gd9ozcdxe-virat-awargands-projects.vercel.app", // <--  Vercel frontend URL
   credentials: true
 }));
 
