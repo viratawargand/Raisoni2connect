@@ -12,13 +12,18 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: "https://raisoni2connect.onrender.com", credentials: true }));
 
+// ✅ CORS: Allow frontend on Vercel + localhost (for testing)
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://raisoni2connect-5erqffc1r-virat-awargands-projects.vercel.app" // <-- Vercel frontend URL
+    ],
+    credentials: true,
+  })
+);
 
-app.use(cors({
-  origin: "raisoni2connect-gd9ozcdxe-virat-awargands-projects.vercel.app", // <--  Vercel frontend URL
-  credentials: true
-}));
 
 
 // ---------- MONGODB CONNECTION ----------
@@ -691,4 +696,7 @@ app.get("/api/connections/all", authMiddleware, async (req, res) => {
 
 
 // ---------- START SERVER ----------
-app.listen(5000, () => console.log("🚀 Server running on https://raisoni2connect.onrender.com"));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
