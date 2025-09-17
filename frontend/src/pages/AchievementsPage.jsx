@@ -15,7 +15,7 @@ export default function AchievementsPage() {
 
   // Axios instance
   const api = axios.create({
-    baseURL: "https://raisoni2connect.onrender.com",
+    baseURL: "https://raisoni2connect-rc.onrender.com",
     headers: {
       Authorization: `Bearer ${getAuthToken()}`,
     },

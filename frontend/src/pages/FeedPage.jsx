@@ -12,7 +12,7 @@ export default function FeedPage() {
   const getAuthToken = () => localStorage.getItem("token");
 
   const authenticatedAxios = axios.create({
-    baseURL: "https://raisoni2connect.onrender.com",
+    baseURL: "https://raisoni2connect-rc.onrender.com",
     headers: {
       Authorization: `Bearer ${getAuthToken()}`,
     },
@@ -152,8 +152,8 @@ export default function FeedPage() {
     if (!post.fileUrl) return null;
     
     const fileType = getFileType(post.fileUrl);
-    const fullUrl = `https://raisoni2connect.onrender.com${post.fileUrl}`;
-    
+    const fullUrl = `https://raisoni2connect-rc.onrender.com${post.fileUrl}`;
+
     switch (fileType) {
       case 'image':
         return (

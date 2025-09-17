@@ -17,7 +17,7 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("https://raisoni2connect.onrender.com", {
+      const response = await fetch("https://raisoni2connect-rc.onrender.com", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

@@ -54,7 +54,7 @@ export default function NetworkPage() {
 
   const sendRequest = async (userId) => {
     try {
-      await axios.post(`https://raisoni2connect.onrender.com/api/connections/request/${userId}`, {}, {
+      await axios.post(`https://raisoni2connect-rc.onrender.com/api/connections/request/${userId}`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("✅ Request sent!");
@@ -66,7 +66,7 @@ export default function NetworkPage() {
 
   const acceptRequest = async (userId) => {
     try {
-      await axios.post(`https://raisoni2connect.onrender.com/api/connections/accept/${userId}`, {}, {
+      await axios.post(`https://raisoni2connect-rc.onrender.com/api/connections/accept/${userId}`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("✅ Request accepted!");
@@ -79,7 +79,7 @@ export default function NetworkPage() {
 
   const rejectRequest = async (userId) => {
     try {
-      await axios.post(`https://raisoni2connect.onrender.com/api/connections/reject/${userId}`, {}, {
+      await axios.post(`https://raisoni2connect-rc.onrender.com/api/connections/reject/${userId}`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("❌ Request rejected!");
