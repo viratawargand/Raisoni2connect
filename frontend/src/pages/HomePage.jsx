@@ -16,7 +16,7 @@ import {
 import MessagesDrawer from "../components/MessagesDrawer";
 import NotificationsDrawer from "../components/NotificationsDrawer";
 
-const API_URL = "https://raisoni2connect-rc.onrender.com"; // Your backend API
+const API_URL = "https://raisoni2connect-rc.onrender.com/api"; // ✅  base URL
 const token = localStorage.getItem("token"); // Store token after login
 
 export default function HomePage() {
