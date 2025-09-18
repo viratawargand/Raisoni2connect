@@ -12,7 +12,7 @@ export default function NetworkPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("https://raisoni2connect.onrender.com/api/connections", {
+      const res = await axios.get("https://raisoni2connect-rc.onrender.com/api/connections", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
@@ -23,7 +23,7 @@ export default function NetworkPage() {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get("https://raisoni2connect.onrender.com/api/connections/requests", {
+      const res = await axios.get("https://raisoni2connect-rc.onrender.com/api/connections/requests", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRequests(res.data);
@@ -34,7 +34,7 @@ export default function NetworkPage() {
 
   const fetchConnections = async () => {
     try {
-      const res = await axios.get("https://raisoni2connect.onrender.com/api/connections/all", {
+      const res = await axios.get("https://raisoni2connect-rc.onrender.com/api/connections/all", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setConnections(res.data);
