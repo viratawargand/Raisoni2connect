@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   FaHome,
@@ -16,10 +16,10 @@ import {
 import MessagesDrawer from "../components/MessagesDrawer";
 import NotificationsDrawer from "../components/NotificationsDrawer";
 
-const API_URL = "https://raisoni2connect-rc.onrender.com/api"; // ✅  base URL
-const token = localStorage.getItem("token"); // Store token after login
+const API_URL = "https://raisoni2connect-rc.onrender.com/api"; // ✅ backend base URL
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const [drawer, setDrawer] = useState({ open: false, type: "" });
   const [posts, setPosts] = useState([]);
   const [text, setText] = useState("");
@@ -29,7 +29,13 @@ export default function HomePage() {
   const openDrawer = (type) => setDrawer({ open: true, type });
   const closeDrawer = () => setDrawer({ open: false, type: "" });
 
+  // ✅ Fetch posts
   const fetchPosts = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/auth"); // redirect to login
+      return;
+    }
     try {
       const res = await axios.get(`${API_URL}/posts`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -37,15 +43,27 @@ export default function HomePage() {
       setPosts(res.data);
     } catch (err) {
       console.error("Failed to fetch posts", err);
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/auth");
+      }
     }
   };
 
+  // ✅ Handle file change
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
     setFiles((prev) => [...prev, ...selectedFiles]);
   };
 
+  // ✅ Handle post creation
   const handlePost = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/auth");
+      return;
+    }
+
     if (!text.trim() && files.length === 0) return;
 
     const formData = new FormData();
@@ -64,13 +82,20 @@ export default function HomePage() {
       setText("");
       setFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = null;
-      fetchPosts(); // Refresh posts
+      fetchPosts();
     } catch (err) {
       console.error("Failed to post", err);
     }
   };
 
+  // ✅ Handle delete
   const handleDelete = async (postId) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/auth");
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
       await axios.delete(`${API_URL}/posts/${postId}`, {
@@ -86,6 +111,8 @@ export default function HomePage() {
     fetchPosts();
   }, []);
 
+
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="flex items-center justify-between px-6 py-3 bg-white shadow">
