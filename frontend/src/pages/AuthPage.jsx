@@ -17,11 +17,11 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("https://raisoni2connect.onrender.com/api/login", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(form),
-});
+      const response = await fetch("https://raisoni2connect-rc.onrender.com/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
 
       const data = await response.json();
