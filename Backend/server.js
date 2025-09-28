@@ -13,16 +13,16 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+// ✅ CORS: Allow frontend on Vercel + localhost (for testing)
 app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      /\.vercel\.app$/   // ✅ allows all Vercel deploys
+      "https://raisoni2connect-5erqffc1r-virat-awargands-projects.vercel.app" // <-- Vercel frontend URL
     ],
     credentials: true,
   })
 );
-
 
 
 
@@ -693,6 +693,7 @@ app.get("/api/connections/all", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch connections" });
   }
 });
+
 
 
 // ---------- START SERVER ----------

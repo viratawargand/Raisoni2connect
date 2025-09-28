@@ -18,7 +18,7 @@ export default function MessagesDrawer({ open, onClose }) {
     const fetchConnections = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await api.get("/api/connections", {
+        const res = await api.get("/connections", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setConnections(res.data || []);
@@ -35,9 +35,7 @@ export default function MessagesDrawer({ open, onClose }) {
     try {
       setSelectedChat(userId);
       const token = localStorage.getItem("token");
-
-      // For simplicity, use a pseudo-conversation ID = userId
-      const res = await api.get(`/api/messages/${userId}`, {
+      const res = await api.get(`/messages/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessages(res.data || []);
@@ -52,7 +50,7 @@ export default function MessagesDrawer({ open, onClose }) {
     try {
       const token = localStorage.getItem("token");
       const res = await api.post(
-        `/api/messages/${selectedChat}`,
+        `/messages/${selectedChat}`,
         { text: newMsg },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -67,7 +65,7 @@ export default function MessagesDrawer({ open, onClose }) {
   const deleteMessage = async (msgId) => {
     try {
       const token = localStorage.getItem("token");
-      await api.delete(`/api/messages/${selectedChat}/${msgId}`, {
+      await api.delete(`/messages/${selectedChat}/${msgId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessages(messages.filter((m) => m._id !== msgId));
@@ -81,7 +79,7 @@ export default function MessagesDrawer({ open, onClose }) {
     try {
       const token = localStorage.getItem("token");
       const res = await api.post(
-        `/api/messages/${selectedChat}/${msgId}/react`,
+        `/messages/${selectedChat}/${msgId}/react`,
         { emoji },
         { headers: { Authorization: `Bearer ${token}` } }
       );
